@@ -4,9 +4,9 @@ String allProductModelToJson(AllProductModel data) => json.encode(data.toJson())
 
 class AllProductModel {
   AllProductModel({
-      this.products, 
-      this.total, 
-      this.skip, 
+      this.products,
+      this.total,
+      this.skip,
       this.limit,
   });
 
