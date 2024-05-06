@@ -40,6 +40,7 @@ class AllProductModel {
 }
 
 Products productsFromJson(String str) => Products.fromJson(json.decode(str));
+List<Products> listProductsFromJson(String result) => List<Products>.from(jsonDecode(result).map((e) => Products.fromJson(e)));
 String productsToJson(Products data) => json.encode(data.toJson());
 class Products {
   Products({
@@ -68,7 +69,7 @@ class Products {
     thumbnail = json['thumbnail'];
     images = json['images'] != null ? json['images'].cast<String>() : [];
   }
-  int? id;
+  String? id;
   String? title;
   String? description;
   int? price;

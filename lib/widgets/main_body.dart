@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:learn_network_g10/widgets/text_field_widget.dart';
 
@@ -11,7 +13,7 @@ Widget body({
   required bool isLoading,
   required TextEditingController textEditingController,
   required void Function()? onPressed,
-  required List<Products> list,
+  required Widget child,
 }) {
   return isError
       ? errorWidget(
@@ -23,12 +25,7 @@ Widget body({
             textFieldWidget(textEditingController),
             Expanded(
               child: isLoading
-                  ? ListView.builder(
-                      itemCount: list.length,
-                      itemBuilder: (_, index) {
-                        return everyCard(list[index]);
-                      },
-                    )
+                  ? child
                   : const Center(
                       child: CircularProgressIndicator(),
                     ),

@@ -1,19 +1,10 @@
 import 'dart:developer';
-
-import 'package:dio/dio.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:learn_network_g10/constants/api_constants.dart';
 import 'package:learn_network_g10/models/all_product_model.dart';
 import 'package:learn_network_g10/services/dio_service.dart';
-import 'package:learn_network_g10/services/network_service.dart';
 import 'package:learn_network_g10/services/util_service.dart';
-import 'package:learn_network_g10/widgets/every_card.dart';
-import 'package:learn_network_g10/widgets/text_field_widget.dart';
-import 'package:lottie/lottie.dart';
-
-import '../widgets/error_widget.dart';
+import '../widgets/every_card.dart';
 import '../widgets/main_body.dart';
 
 class HomePage extends StatefulWidget {
@@ -24,11 +15,16 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  AllProductModel? allProductModel;
-  List<Products> list = [];
+
+  List<Products> products = [];
   bool isLoading = false;
   bool isError = false;
+
   TextEditingController textEditingController = TextEditingController();
+  TextEditingController titleController = TextEditingController();
+  TextEditingController costController = TextEditingController();
+  TextEditingController categoryController = TextEditingController();
+
 
   // Future<void> getAllProducts() async {
   //   isLoading = false;
@@ -68,27 +64,85 @@ class _HomePageState extends State<HomePage> {
   //   }
   // }
 
-  /// DIO
 
-  Future<void> getDioData() async {
+  Future<void>refresh(String? result, [String msg = "Successfully done"])async{
+    if(result != null){
+      Utils.fireSnackBar(msg, context);
+    }
+    await read();
+    setState(() {});
+  }
+
+  /// DIO Service
+
+  // READ
+  Future<void> read() async {
     isLoading = false;
-    var result = await DioService.getData(ApiConstants.apiProducts);
-    log(result.runtimeType.toString());
-    if (result.runtimeType == DioException) {
-      isError = true;
+    String? result = await DioService.getData(context, ApiConstants.apiProducts);
+    if(result != null){
+      products = listProductsFromJson(result);
+      isLoading = true;
       setState(() {});
-      result = result as DioException;
-      Utils.fireSnackBar(
-          "DioException: Error at ${result.requestOptions.uri}. Because of ${result.type.name}", context);
-    } else {
-      allProductModel = allProductModelFromJson(result as String);
-      list = allProductModel!.products!;
-      log(list.toString());
+    }else{
       isLoading = true;
       setState(() {});
     }
-    setState(() {});
   }
+
+  // CREATE
+  Future<void>create()async{
+    String title = titleController.text.trim().toString();
+    String price = costController.text.trim().toString();
+    String category = categoryController.text.trim().toString();
+    Products products = Products(
+      title: title,
+      category: category,
+      price: int.parse(price),
+      description: "nothing",
+      discountPercentage: 1,
+      rating: 1,
+      stock: 1,
+      brand: "brand",
+      thumbnail: "thumbnail",
+      images: []
+    );
+    isLoading = false;
+    String? result = await DioService.postData(context, ApiConstants.apiProducts, products.toJson());
+    await refresh(result, "Successfully created");
+  }
+
+  // UPDATE
+  Future<void>update(Products product)async{
+    String? result = await DioService.updateData(context, ApiConstants.apiProducts, product.id!, product.toJson());
+    await refresh(result, "Successfully updated");
+  }
+
+  // DELETE
+  Future<void>delete(Products product)async{
+    String? result = await DioService.deleteData(context, ApiConstants.apiProducts, product.id!, product.toJson());
+    await refresh(result, "Deleted");
+  }
+
+  void clear(){
+    titleController.clear();
+    costController.clear();
+    categoryController.clear();
+  }
+
+  // request
+  Future<void> request() async {
+    isLoading = false;
+    String? result = await DioService.request(context, ApiConstants.apiProducts, RequestMethod.GET);
+    if(result != null){
+      products = listProductsFromJson(result);
+      isLoading = true;
+      setState(() {});
+    }else{
+      isLoading = true;
+      setState(() {});
+    }
+  }
+
 
   @override
   void dispose() {
@@ -97,9 +151,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  void didChangeDependencies() async {
-    await getDioData();
-    super.didChangeDependencies();
+  void initState() {
+    isLoading = false;
+    request().then((value) {
+      isLoading = true;
+      setState(() {});
+    });
+    super.initState();
   }
 
   @override
@@ -115,10 +173,137 @@ class _HomePageState extends State<HomePage> {
           isLoading: isLoading,
           textEditingController: textEditingController,
           onPressed: () async {
-            await getDioData();
+            // await read();
           },
-          list: list,
+          child: ListView.builder(
+            itemCount: products.length,
+            itemBuilder: (_, index) {
+              Products product = products[index];
+              return everyCard(
+                product: product,
+                edit: (context, product){
+                  titleController.text = product.title!;
+                  costController.text = product.price!.toString();
+                  categoryController.text = product.category!;
+                  showDialog(
+                    context: context,
+                    builder: (context){
+                      return AlertDialog(
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextField(
+                              controller: titleController,
+                              decoration: const InputDecoration(
+                                hintText: "TITLE",
+                              ),
+                            ),
+                            TextField(
+                              controller: costController,
+                              decoration: const InputDecoration(
+                                hintText: "COST",
+                              ),
+                            ),
+                            TextField(
+                              controller: categoryController,
+                              decoration: const InputDecoration(
+                                hintText: "CATEGORY",
+                              ),
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: ()async{
+                              product.title = titleController.text;
+                              product.price = int.parse(costController.text);
+                              product.category = categoryController.text;
+                              log(product.title.toString());
+                              log(product.price.toString());
+                              log(product.category.toString());
+                              await update(product);
+                              Navigator.pop(context);
+                            },
+                            child: const Text("Create"),
+                          ),
+                          TextButton(
+                            onPressed: (){
+                              Navigator.pop(context);
+                            },
+                            child: const Text("Cancel"),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                  clear();
+                },
+                delete: (context, product)async{
+                  await DioService.request(
+                    context,
+                    ApiConstants.apiProducts,
+                    RequestMethod.DELETE,
+                    {}, // param
+                    {}, // data
+                    product.id,
+                  );
+                  await refresh("deleted");
+                },
+              );
+            },
+          ),
         ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: (){
+          showDialog(
+              context: context,
+              builder: (context){
+                return AlertDialog(
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: titleController,
+                        decoration: const InputDecoration(
+                          hintText: "TITLE",
+                        ),
+                      ),
+                      TextField(
+                        controller: costController,
+                        decoration: const InputDecoration(
+                          hintText: "COST",
+                        ),
+                      ),
+                      TextField(
+                        controller: categoryController,
+                        decoration: const InputDecoration(
+                          hintText: "CATEGORY",
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: ()async{
+                        await create();
+                        Navigator.pop(context);
+                      },
+                      child: const Text("Create"),
+                    ),
+                    TextButton(
+                      onPressed: (){
+                        Navigator.pop(context);
+                      },
+                      child: const Text("Cancel"),
+                    ),
+                  ],
+                );
+              },
+          );
+          clear();
+        },
+        child: const Text("+"),
+      ),
     );
   }
 }
