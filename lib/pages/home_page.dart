@@ -4,6 +4,7 @@ import 'package:learn_network_g10/constants/api_constants.dart';
 import 'package:learn_network_g10/models/all_product_model.dart';
 import 'package:learn_network_g10/services/dio_service.dart';
 import 'package:learn_network_g10/services/util_service.dart';
+import 'package:learn_network_g10/style/colors.dart';
 import '../widgets/every_card.dart';
 import '../widgets/main_body.dart';
 
@@ -163,9 +164,11 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
         appBar: AppBar(
           title: const Text("Products"),
           centerTitle: true,
+          backgroundColor: AppColors.appBarColor,
         ),
         body: body(
           context: context,
@@ -196,6 +199,9 @@ class _HomePageState extends State<HomePage> {
                               controller: titleController,
                               decoration: const InputDecoration(
                                 hintText: "TITLE",
+                                hintStyle: TextStyle(
+                                  color: AppColors.textColor,
+                                )
                               ),
                             ),
                             TextField(

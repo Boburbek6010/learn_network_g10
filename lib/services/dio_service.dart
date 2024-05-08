@@ -95,6 +95,7 @@ sealed class DioService{
   }
 
   static Future<String?>request(BuildContext context, String api, RequestMethod method, [Map<String, dynamic>? param, Map<String, Object?> data = const {}, String? id])async{
+
     try{
       Response response = await init().request(
         id == null

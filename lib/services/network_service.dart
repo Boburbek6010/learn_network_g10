@@ -1,11 +1,18 @@
-
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 
+
 @immutable
-sealed class NetworkService{
+class NetworkService{
+
+  static const NetworkService _service = NetworkService._internal();
+
+  const NetworkService._internal();
+
+  factory NetworkService(){
+    return _service;
+  }
 
   /// base url
   static const String _baseUrl = "dummyjson.com";
